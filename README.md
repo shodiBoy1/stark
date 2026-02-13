@@ -19,7 +19,7 @@ https://github.com/user-attachments/assets/32b7e525-51e3-4b25-bf97-f24602a3a489
 ## Features
 
 - **AI-generated practice tests** — multiple choice, true/false, short answer, and fill-in-the-blank
-- **Dual AI provider** — choose between OpenAI (GPT-4o Mini) and Anthropic (Claude Sonnet)
+- **Dual AI provider** — choose between OpenAI and Anthropic
 - **Smart PDF pipeline** — pypdfium2 for fast text extraction, with OpenAI Vision OCR fallback for scanned documents
 - **Upload lecture PDFs and old exams** — STARK matches the style of your professor's real exams
 - **Project-based organization** — group materials by course with exam context for better generation

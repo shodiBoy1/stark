@@ -4,7 +4,7 @@
 
 A self-hosted, AI-powered exam preparation tool. Upload your lecture PDFs, and STARK generates realistic practice exams using OpenAI or Anthropic. All data stays on your machine — nothing is stored on external servers.
 
-[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg)](https://www.typescriptlang.org)
 
@@ -104,4 +104,4 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
 
 ## License
 
-STARK is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+STARK is licensed under the [MIT License](LICENSE).

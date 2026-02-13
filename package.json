@@ -2,7 +2,7 @@
   "name": "stark",
   "version": "0.1.0",
   "description": "Upload your lectures. Generate practice exams. Ace your finals.",
-  "license": "AGPL-3.0-only",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/usestark/stark.git"

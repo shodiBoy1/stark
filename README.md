@@ -8,6 +8,8 @@ A self-hosted, AI-powered exam preparation tool. Upload your lecture PDFs, and S
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg)](https://www.typescriptlang.org)
 
+https://github.com/shodiBoy1/stark/raw/main/stark_demo.mp4
+
 ---
 
 ## Features

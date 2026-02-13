@@ -2,13 +2,17 @@
 
 **Upload your lectures. Generate practice exams. Ace your finals.**
 
+
+
+
+
 A self-hosted, AI-powered exam preparation tool. Upload your lecture PDFs, and STARK generates realistic practice exams using OpenAI or Anthropic. All data stays on your machine — nothing is stored on external servers.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg)](https://www.typescriptlang.org)
 
-https://github.com/shodiBoy1/stark/raw/main/stark_demo.mp4
+https://github.com/user-attachments/assets/32b7e525-51e3-4b25-bf97-f24602a3a489
 
 ---
 

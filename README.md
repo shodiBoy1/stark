@@ -2,11 +2,7 @@
 
 **Upload your lectures. Generate practice exams. Ace your finals.**
 
-
-
-
-
-A self-hosted, AI-powered exam preparation tool. Upload your lecture PDFs, and STARK generates realistic practice exams using OpenAI or Anthropic. All data stays on your machine — nothing is stored on external servers.
+A self-hosted, AI-powered exam preparation tool. Upload your lecture PDFs, and STARK generates realistic practice exams using OpenAI or Anthropic.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org)
@@ -29,7 +25,6 @@ https://github.com/user-attachments/assets/32b7e525-51e3-4b25-bf97-f24602a3a489
 - **Bloom's taxonomy difficulty levels** — Easy, Medium, and Hard question tiers
 - **Multi-language support** — English and German
 - **Custom instructions** — fine-tune how the AI generates your questions
-- **100% local data** — your data lives in your browser's IndexedDB and never leaves your machine
 
 ## Quick Start
 

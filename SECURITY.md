@@ -12,7 +12,7 @@ If you discover a security vulnerability in STARK, please report it responsibly.
 
 **Do NOT open a public GitHub issue for security vulnerabilities.**
 
-Instead, use [GitHub's private vulnerability reporting](https://github.com/usestark/stark/security/advisories/new) to submit your report.
+Instead, use [GitHub's private vulnerability reporting](https://github.com/shodiBoy1/stark/security/advisories/new) to submit your report.
 
 ### What to include
 

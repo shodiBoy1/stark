@@ -78,12 +78,11 @@ PDFs, generated tests, and settings are saved in the browser you used (IndexedDB
 
 The app process does not keep uploaded PDFs after text extraction. It does send lecture text to the model API when you generate questions.
 
-## Limits
+## Large files
 
-- PDF uploads larger than 20 MB are rejected. Split long scans.
-- Only the first 120 pages are read.
-- At most 16 sparse pages are sent for OCR on one upload. Other sparse pages keep whatever selectable text was found.
-- One test asks for at most 60 questions, in batches of 12, so a long test takes several model calls.
+There is no upload size limit and no page cutoff. The PDF stays in the browser. Pages with little selectable text are read with your API key, a few at a time, so a long scan takes longer and uses more of that key.
+
+A test still asks the model about one section of the lecture at a time. Later sections are covered in later batches, up to 60 questions per test.
 
 ## Troubleshooting
 

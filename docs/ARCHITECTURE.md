@@ -16,8 +16,8 @@ User uploads PDF
        |
        v
 [Python subprocess: scripts/render_pages.py]
-  - pypdfium2 extracts text from each page (up to 120)
-  - pages under 100 characters are rendered to JPEG, capped at 16
+  - pypdfium2 extracts text from every page
+  - pages under 100 characters are rendered a few at a time for OCR
        |
        v
 [Sparse pages go to OpenAI vision OCR when OPENAI_API_KEY is set]
@@ -35,9 +35,9 @@ User uploads PDF
 2. File sent to `/api/pdf/upload` API route.
 3. The PDF is written to a temporary file (random name, deleted after extraction). Python (`scripts/render_pages.py`) extracts text per page and renders only sparse pages.
 4. Pages with at least 100 characters of selectable text skip OCR.
-5. Up to 16 sparse pages are sent to OpenAI vision in small batches. A page keeps its extracted text if OCR returns nothing better.
+5. Every sparse page is sent to OpenAI vision, a few pages at a time. A page keeps its extracted text if OCR returns nothing better.
 6. Vision OCR retries when the provider reports a rate limit.
-7. `/api/pdf/rescan` runs the same pipeline again. Uploads over 20 MB are rejected.
+7. `/api/pdf/rescan` runs the same pipeline again. There is no file-size or page-count cutoff.
 
 ## Test Generation Pipeline
 

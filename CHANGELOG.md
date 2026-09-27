@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Practice mode shows an explanation after each answer; exam mode still waits until submit
 - Finished attempts can be drilled using only missed questions
 - Short answers accept equivalent wording, including German spelling
-- PDF reading rejects files over 20 MB, cleans extracted text, and OCRs a capped set of sparse pages
+- PDF reading has no file-size or page cap. Sparse pages are read with the configured API key, a few at a time
 - Setup docs point at this repository and describe a local run
 
 ## [0.1.0] - 2026-02-13

@@ -1,5 +1,3 @@
-import { MAX_PDF_BYTES } from "./constants";
-
 export interface PdfExtractionResponse {
   text: string;
   pageTexts: string[];
@@ -14,9 +12,6 @@ export async function requestPdfExtraction(
   name: string,
   endpoint: "/api/pdf/upload" | "/api/pdf/rescan",
 ): Promise<PdfExtractionResponse> {
-  if (file.size > MAX_PDF_BYTES) {
-    throw new Error(`"${name}" is larger than 20 MB. Split it into smaller PDFs.`);
-  }
   if (file.size < 5) {
     throw new Error(`"${name}" is empty.`);
   }

@@ -20,7 +20,7 @@ export const generateRequestSchema = z.object({
     .array(
       z.object({
         name: z.string().min(1).max(180),
-        pages: z.array(z.string().max(12_000)).min(1).max(120),
+        pages: z.array(z.string()).min(1),
       }),
     )
     .min(1)

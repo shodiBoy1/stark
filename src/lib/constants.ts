@@ -35,9 +35,6 @@ export const TEST_MODES = [
 
 export const QUESTIONS_PER_BATCH = 12;
 export const MAX_QUESTIONS = 60;
-export const MAX_PDF_BYTES = 20 * 1024 * 1024;
-export const MAX_PDF_PAGES = 120;
-export const MAX_OCR_PAGES = 16;
 
 // Text budgets for prompt building
 export const TEXT_BUDGET = 28_000;

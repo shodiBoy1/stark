@@ -5,12 +5,12 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { randomUUID } from "crypto";
 import OpenAI from "openai";
-import { MAX_OCR_PAGES, MAX_PDF_BYTES, MAX_PDF_PAGES } from "./constants";
 import { extractJsonValue, questionsFromPayload } from "./parse-model-json";
 
 const execFileAsync = promisify(execFile);
 
 const PAGES_PER_BATCH = 2;
+const RENDER_BATCH = 4;
 const MAX_RETRIES = 3;
 const OCR_CONCURRENCY = 3;
 
@@ -44,30 +44,13 @@ export function isValidPDF(buffer: Buffer): boolean {
   return buffer.subarray(0, 1024).toString("latin1").includes("%PDF-");
 }
 
-async function renderPages(buffer: Buffer): Promise<{
-  pageTexts: string[];
-  ocrPages: OcrPage[];
-  pageCount: number;
-  warnings: string[];
-}> {
-  const { python, renderScript } = getPythonPaths();
-  const tmpPath = join(tmpdir(), `stark-${randomUUID()}.pdf`);
-  await writeFile(tmpPath, buffer);
-
+async function runPython(args: string[], maxBuffer: number): Promise<Record<string, unknown>> {
+  const { python } = getPythonPaths();
   try {
-    const { stdout } = await execFileAsync(
-      python,
-      [renderScript, tmpPath, String(MAX_PDF_PAGES), String(MAX_OCR_PAGES)],
-      { timeout: 90_000, maxBuffer: 80 * 1024 * 1024 },
-    );
-    const result = JSON.parse(stdout);
-    if (result.error) throw new Error(result.error);
-    return {
-      pageTexts: Array.isArray(result.pageTexts) ? result.pageTexts : [],
-      ocrPages: Array.isArray(result.ocrPages) ? result.ocrPages : [],
-      pageCount: Number(result.pageCount) || 0,
-      warnings: Array.isArray(result.warnings) ? result.warnings.filter((item: unknown) => typeof item === "string") : [],
-    };
+    const { stdout } = await execFileAsync(python, args, { maxBuffer });
+    const result = JSON.parse(stdout) as Record<string, unknown>;
+    if (typeof result.error === "string" && result.error) throw new Error(result.error);
+    return result;
   } catch (error) {
     const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
     if (code === "ENOENT") {
@@ -90,8 +73,6 @@ async function renderPages(buffer: Buffer): Promise<{
       }
     }
     throw error;
-  } finally {
-    await unlink(tmpPath).catch(() => {});
   }
 }
 
@@ -203,32 +184,55 @@ async function ocrWithVision(ocrPages: OcrPage[], basicTexts: string[]): Promise
 
 export async function extractPdf(buffer: Buffer): Promise<PdfExtraction> {
   if (buffer.length === 0) throw new Error("The PDF is empty.");
-  if (buffer.length > MAX_PDF_BYTES) {
-    throw new Error("PDF is larger than 20 MB. Split it into smaller files.");
-  }
   if (!isValidPDF(buffer)) throw new Error("This file is not a PDF.");
 
-  const rendered = await renderPages(buffer);
-  const warnings = [...rendered.warnings];
-  let pageTexts = rendered.pageTexts;
+  const { renderScript } = getPythonPaths();
+  const tmpPath = join(tmpdir(), `stark-${randomUUID()}.pdf`);
+  await writeFile(tmpPath, buffer);
 
-  if (rendered.ocrPages.length > 0) {
-    if (!process.env.OPENAI_API_KEY) {
-      warnings.push("Some pages have little selectable text. Add OPENAI_API_KEY to read those pages, or upload a text-based PDF.");
-    } else {
-      pageTexts = await ocrWithVision(rendered.ocrPages, rendered.pageTexts);
+  try {
+    const extracted = await runPython([renderScript, tmpPath, "text"], 512 * 1024 * 1024);
+    const warnings: string[] = [];
+    let pageTexts = Array.isArray(extracted.pageTexts)
+      ? extracted.pageTexts.filter((page): page is string => typeof page === "string")
+      : [];
+    const sparse = Array.isArray(extracted.sparse)
+      ? extracted.sparse.filter((index): index is number => typeof index === "number")
+      : [];
+    const pageCount = typeof extracted.pageCount === "number" ? extracted.pageCount : pageTexts.length;
+
+    if (sparse.length > 0) {
+      if (!process.env.OPENAI_API_KEY) {
+        warnings.push(
+          "Some pages have little selectable text. Add OPENAI_API_KEY to read those pages, or upload a text-based PDF.",
+        );
+      } else {
+        for (let i = 0; i < sparse.length; i += RENDER_BATCH) {
+          const indexes = sparse.slice(i, i + RENDER_BATCH);
+          const rendered = await runPython(
+            [renderScript, tmpPath, "render", indexes.join(",")],
+            128 * 1024 * 1024,
+          );
+          const ocrPages = Array.isArray(rendered.ocrPages) ? (rendered.ocrPages as OcrPage[]) : [];
+          if (ocrPages.length > 0) {
+            pageTexts = await ocrWithVision(ocrPages, pageTexts);
+          }
+        }
+      }
     }
-  }
 
-  const readable = pageTexts.filter((page) => page.trim().length >= 40).length;
-  if (readable === 0) {
-    warnings.push("Almost no text was found. The PDF may be a scan, or the pages are mostly images.");
-  }
+    const readable = pageTexts.filter((page) => page.trim().length >= 40).length;
+    if (readable === 0) {
+      warnings.push("Almost no text was found. The PDF may be a scan, or the pages are mostly images.");
+    }
 
-  return {
-    text: pageTexts.map((page) => page.trim()).filter(Boolean).join("\n\n"),
-    pageTexts,
-    pageCount: rendered.pageCount,
-    warnings,
-  };
+    return {
+      text: pageTexts.map((page) => page.trim()).filter(Boolean).join("\n\n"),
+      pageTexts,
+      pageCount,
+      warnings,
+    };
+  } finally {
+    await unlink(tmpPath).catch(() => {});
+  }
 }

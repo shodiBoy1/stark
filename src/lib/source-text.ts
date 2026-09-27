@@ -100,14 +100,14 @@ export function pagesForGeneration(pdf: {
   if (pdf.pageTexts && pdf.pageTexts.length > 0) {
     return {
       name: named,
-      pages: pdf.pageTexts.slice(0, 120).map((page) => (page || "").slice(0, 8000)),
+      pages: pdf.pageTexts.map((page) => page || ""),
     };
   }
 
   const text = pdf.extractedText || "";
   const pages: string[] = [];
   const size = 1600;
-  for (let i = 0; i < text.length && pages.length < 120; i += size) {
+  for (let i = 0; i < text.length; i += size) {
     pages.push(text.slice(i, i + size));
   }
   return { name: named, pages: pages.length > 0 ? pages : [""] };

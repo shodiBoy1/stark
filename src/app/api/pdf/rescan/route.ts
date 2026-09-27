@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     console.error("PDF rescan error:", error);
     const message = error instanceof Error ? error.message : "Failed to read PDF";
     const safe =
-      message.includes("PDF") || message.includes("Python") || message.includes("API key") || message.includes("20 MB")
+      message.includes("PDF") || message.includes("Python") || message.includes("API key")
         ? message
         : "Failed to read PDF";
     return NextResponse.json({ error: safe }, { status: 400 });

@@ -6,7 +6,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Send } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useTest } from "@/hooks/useTests";
-import { normalizeText } from "@/lib/utils";
+import { gradeTest } from "@/lib/grading";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -23,6 +23,7 @@ export default function TestTakingPage({ params }: { params: Promise<{ id: strin
   const router = useRouter();
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const timeRef = useRef(0);
@@ -43,14 +44,7 @@ export default function TestTakingPage({ params }: { params: Promise<{ id: strin
         const currentTest = await db.tests.get(id);
         if (!currentTest || currentTest.status === "completed") return;
 
-        let totalCorrect = 0;
-        for (const q of currentTest.questions) {
-          const userAnswer = currentTest.answers[q.id];
-          if (userAnswer && normalizeText(userAnswer) === normalizeText(q.correctAnswer)) {
-            totalCorrect++;
-          }
-        }
-        const score = Math.round((totalCorrect / currentTest.totalQuestions) * 100);
+        const { score, totalCorrect } = gradeTest(currentTest.questions, currentTest.answers);
 
         await db.tests.update(id, {
           status: "completed",
@@ -107,13 +101,36 @@ export default function TestTakingPage({ params }: { params: Promise<{ id: strin
   if (isCompleted) return null;
 
   const currentQuestion = test.questions[currentIndex];
-  const answeredCount = Object.keys(test.answers).length;
+  const answeredCount = test.questions.filter((question) => test.answers[question.id]?.trim()).length;
   const progress = (answeredCount / test.totalQuestions) * 100;
   const isExamMode = test.mode === "exam_simulation";
+  const flagged = test.flagged ?? [];
+  const showPracticeResult = !isExamMode && !!revealed[currentQuestion.id];
 
   async function handleAnswer(answer: string) {
     const updated = { ...test!.answers, [currentQuestion.id]: answer };
     await db.tests.update(id, { answers: updated });
+    if (!isExamMode && currentQuestion.type !== "short_answer" && answer.trim()) {
+      setRevealed((current) => ({ ...current, [currentQuestion.id]: true }));
+    }
+    if (currentQuestion.type === "short_answer") {
+      setRevealed((current) => ({ ...current, [currentQuestion.id]: false }));
+    }
+  }
+
+  async function toggleFlag() {
+    const next = flagged.includes(currentQuestion.id)
+      ? flagged.filter((questionId) => questionId !== currentQuestion.id)
+      : [...flagged, currentQuestion.id];
+    await db.tests.update(id, { flagged: next });
+  }
+
+  function goToNextUnanswered() {
+    const unanswered = (index: number) => !test!.answers[test!.questions[index].id]?.trim();
+    const after = test!.questions.findIndex((_, index) => index > currentIndex && unanswered(index));
+    const earlier = test!.questions.findIndex((_, index) => unanswered(index));
+    const next = after >= 0 ? after : earlier;
+    if (next >= 0) setCurrentIndex(next);
   }
 
   return (
@@ -151,14 +168,31 @@ export default function TestTakingPage({ params }: { params: Promise<{ id: strin
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">
+          <p className="text-xs text-muted mb-3">
+            {isExamMode
+              ? "Exam simulation hides explanations until you submit."
+              : "Practice shows the explanation after you answer. Short answers need Check."}
+          </p>
           <QuestionCard
             question={currentQuestion}
             index={currentIndex}
             answer={test.answers[currentQuestion.id]}
             onAnswer={handleAnswer}
+            showResult={showPracticeResult}
+            lockAnswers={false}
+            flagged={flagged.includes(currentQuestion.id)}
+            onToggleFlag={toggleFlag}
+            onCheck={
+              !isExamMode && currentQuestion.type === "short_answer"
+                ? () => {
+                    if (!test.answers[currentQuestion.id]?.trim()) return;
+                    setRevealed((current) => ({ ...current, [currentQuestion.id]: true }));
+                  }
+                : undefined
+            }
           />
 
-          <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center justify-between mt-4 gap-2">
             <Button
               variant="secondary"
               onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
@@ -166,6 +200,9 @@ export default function TestTakingPage({ params }: { params: Promise<{ id: strin
             >
               <ChevronLeft size={16} />
               Previous
+            </Button>
+            <Button variant="ghost" onClick={goToNextUnanswered}>
+              Next unanswered
             </Button>
 
             {currentIndex === test.questions.length - 1 ? (
@@ -192,6 +229,7 @@ export default function TestTakingPage({ params }: { params: Promise<{ id: strin
             questions={test.questions}
             answers={test.answers}
             currentIndex={currentIndex}
+            flagged={flagged}
             onNavigate={setCurrentIndex}
           />
         </div>
@@ -207,9 +245,11 @@ export default function TestTakingPage({ params }: { params: Promise<{ id: strin
           {answeredCount < test.totalQuestions && (
             <span className="text-warning">
               {" "}
-              {test.totalQuestions - answeredCount} questions are unanswered and will be marked
-              incorrect.
+              {test.totalQuestions - answeredCount} unanswered questions will be marked incorrect.
             </span>
+          )}
+          {flagged.length > 0 && (
+            <span> {flagged.length} flagged {flagged.length === 1 ? "question is" : "questions are"} still marked for review.</span>
           )}
         </p>
         <div className="flex gap-3 justify-end mt-4">

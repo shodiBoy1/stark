@@ -1,21 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import { Sidebar } from "./sidebar";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+const listeners = new Set<() => void>();
 
-  useEffect(() => {
-    setCollapsed(localStorage.getItem("sidebar-collapsed") === "true");
-  }, []);
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function collapsedSnapshot() {
+  return localStorage.getItem("sidebar-collapsed") === "true";
+}
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const collapsed = useSyncExternalStore(subscribe, collapsedSnapshot, () => false);
 
   function toggle() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem("sidebar-collapsed", String(next));
-      return next;
-    });
+    localStorage.setItem("sidebar-collapsed", String(!collapsed));
+    listeners.forEach((listener) => listener());
   }
 
   return (

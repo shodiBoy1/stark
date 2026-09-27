@@ -5,6 +5,7 @@ import { Upload, FileUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { usePDFs } from "@/hooks/usePDFs";
 import { generateThumbnail } from "@/lib/utils";
+import { requestPdfExtraction } from "@/lib/pdf-client";
 import type { PDFRecord } from "@/lib/db";
 
 const MAX_FILES = 10;
@@ -22,19 +23,8 @@ export function PDFUploadZone() {
         return;
       }
 
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch("/api/pdf/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to process "${file.name}"`);
-      }
-
-      const data = await response.json();
+      const data = await requestPdfExtraction(file, file.name, "/api/pdf/upload");
+      for (const warning of data.warnings ?? []) toast.warning(warning);
       const thumbnailDataUrl = generateThumbnail(file.name);
 
       const pdfRecord: PDFRecord = {
@@ -77,8 +67,8 @@ export function PDFUploadZone() {
         try {
           await processFile(pdfFiles[i]);
           successCount++;
-        } catch {
-          toast.error(`Failed to process "${pdfFiles[i].name}"`);
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : `Failed to process "${pdfFiles[i].name}"`);
         }
       }
 

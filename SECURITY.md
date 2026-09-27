@@ -32,4 +32,5 @@ Instead, use [GitHub's private vulnerability reporting](https://github.com/shodi
 - **Never commit `.env` files** — use `.env.local` for local development
 - **Rotate API keys** regularly for OpenAI and Anthropic
 - **Keep dependencies updated** — run `pnpm update` periodically
-- All data is stored locally in your browser's IndexedDB — no data leaves your machine except API calls to OpenAI/Anthropic for question generation and OCR
+- Lecture text is sent to the model provider you configure when you generate questions or OCR a sparse page
+- Do not expose the app on a public URL with your API key in the environment

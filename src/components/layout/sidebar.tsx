@@ -99,8 +99,8 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       {!collapsed ? (
         <div className="mx-3 mb-3 space-y-2">
           <div className="p-4 bg-bg rounded-[12px] border border-card-border">
-            <p className="text-xs text-muted">All data stored locally</p>
-            <p className="text-xs text-muted mt-0.5">in your browser&apos;s IndexedDB</p>
+            <p className="text-xs text-muted">Open source</p>
+            <p className="text-xs text-muted mt-0.5">Uses the API key on this machine</p>
           </div>
           <button
             onClick={() => setShowClearDialog(true)}

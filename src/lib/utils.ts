@@ -32,7 +32,12 @@ export function truncate(str: string, length: number): string {
 }
 
 export function normalizeText(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+  return s
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/[^\p{L}\p{N}\s]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function generateThumbnail(name: string): string {

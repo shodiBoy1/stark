@@ -38,6 +38,8 @@ export interface Question {
   explanation: string;
   context?: string;
   source?: string;
+  page?: number;
+  acceptedAnswers?: string[];
 }
 
 export interface TestRecord {
@@ -60,6 +62,7 @@ export interface TestRecord {
   mode: "practice" | "exam_simulation";
   timeLimitSeconds?: number;
   autoSubmitted?: boolean;
+  flagged?: string[];
   createdAt: Date;
   completedAt?: Date;
 }

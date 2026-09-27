@@ -1,17 +1,17 @@
 {
   "name": "stark",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Upload your lectures. Generate practice exams. Ace your finals.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/usestark/stark.git"
+    "url": "https://github.com/shodiBoy1/stark.git"
   },
-  "homepage": "https://github.com/usestark/stark",
+  "homepage": "https://github.com/shodiBoy1/stark",
   "bugs": {
-    "url": "https://github.com/usestark/stark/issues"
+    "url": "https://github.com/shodiBoy1/stark/issues"
   },
-  "author": "usestark",
+  "author": "shodiBoy1",
   "keywords": [
     "exam-prep",
     "ai",
@@ -21,13 +21,14 @@
     "openai",
     "anthropic",
     "next.js",
-    "self-hosted"
+    "open-source"
   ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --import tsx --test src/lib/*.test.ts",
     "setup": "bash scripts/setup.sh"
   },
   "dependencies": {
@@ -53,6 +54,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

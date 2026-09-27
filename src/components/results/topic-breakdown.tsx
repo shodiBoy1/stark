@@ -1,7 +1,7 @@
 "use client";
 
 import { GlassCard } from "@/components/ui/glass-card";
-import { normalizeText } from "@/lib/utils";
+import { isAnswerCorrect } from "@/lib/grading";
 import type { Question } from "@/lib/db";
 
 interface TopicBreakdownProps {
@@ -16,8 +16,7 @@ export function TopicBreakdown({ questions, answers }: TopicBreakdownProps) {
     const source = q.source || "Unknown";
     const entry = topicMap.get(source) || { correct: 0, total: 0 };
     entry.total++;
-    const userAnswer = answers[q.id];
-    if (userAnswer && normalizeText(userAnswer) === normalizeText(q.correctAnswer)) {
+    if (isAnswerCorrect(q, answers[q.id])) {
       entry.correct++;
     }
     topicMap.set(source, entry);

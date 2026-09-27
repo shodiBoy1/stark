@@ -1,14 +1,14 @@
 import type { Question } from "./db";
 import { QUESTIONS_PER_BATCH, SIMILARITY_THRESHOLD } from "./constants";
 import { normalizeText } from "./utils";
+import type { SourcePages } from "./source-text";
 
 export interface BatchGenerateConfig {
-  texts: string[];
+  sources: SourcePages[];
   difficulty: string;
   language: string;
   model: string;
   questionsCount: number;
-  pdfName: string;
   examFormat?: string;
   examContext?: string;
   instructions?: string;
@@ -18,57 +18,38 @@ export interface BatchGenerateConfig {
 export async function generateInBatches(config: BatchGenerateConfig): Promise<Question[]> {
   const { questionsCount, onProgress } = config;
   const totalBatches = Math.ceil(questionsCount / QUESTIONS_PER_BATCH);
-
-  if (totalBatches <= 1) {
-    onProgress?.(0, 1);
-    const questions = await callGenerate({
-      ...config,
-      totalBatches: 1,
-      batchIndex: 0,
-      previousQuestions: [],
-    });
-    onProgress?.(1, 1);
-    return renumberQuestions(questions);
-  }
-
   const allQuestions: Question[] = [];
 
   for (let i = 0; i < totalBatches; i++) {
     const remaining = questionsCount - allQuestions.length;
     if (remaining <= 0) break;
-    const batchCount = Math.min(QUESTIONS_PER_BATCH, remaining);
 
     onProgress?.(i, totalBatches);
 
-    // Pass previously generated question texts to avoid duplicates
-    const previousQuestions = allQuestions.map((q) => q.question);
-
     const questions = await callGenerate({
       ...config,
-      questionsCount: batchCount,
+      questionsCount: Math.min(QUESTIONS_PER_BATCH, remaining),
       totalBatches,
       batchIndex: i,
-      previousQuestions,
+      previousQuestions: allQuestions.map((question) => question.question),
     });
 
     allQuestions.push(...questions);
   }
 
-  // If we still have fewer than requested, do one retry for the shortfall
   const shortfall = questionsCount - allQuestions.length;
-  if (shortfall > 0) {
+  if (shortfall > 0 && allQuestions.length > 0) {
     try {
-      const previousQuestions = allQuestions.map((q) => q.question);
       const extra = await callGenerate({
         ...config,
         questionsCount: shortfall,
-        totalBatches: 1,
-        batchIndex: 0,
-        previousQuestions,
+        totalBatches: totalBatches + 1,
+        batchIndex: totalBatches,
+        previousQuestions: allQuestions.map((question) => question.question),
       });
       allQuestions.push(...extra);
-    } catch (err) {
-      console.warn("Shortfall retry failed:", err);
+    } catch (error) {
+      console.warn("Shortfall retry failed:", error);
     }
   }
 
@@ -81,58 +62,54 @@ async function callGenerate(
     totalBatches: number;
     batchIndex: number;
     previousQuestions: string[];
-  }
+  },
 ): Promise<Question[]> {
   const response = await fetch("/api/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      texts: config.texts,
+      sources: config.sources,
       difficulty: config.difficulty,
       language: config.language,
       model: config.model,
       questionsCount: config.questionsCount,
-      pdfName: config.pdfName,
       examFormat: config.examFormat,
       examContext: config.examContext,
       instructions: config.instructions,
       batchIndex: config.batchIndex,
       totalBatches: config.totalBatches,
-      previousQuestions: config.previousQuestions,
+      previousQuestions: config.previousQuestions.slice(-30).map((question) => question.slice(0, 240)),
     }),
   });
 
+  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const data = await response.json();
-    throw new Error(data.error || "Generation failed");
+    throw new Error(typeof data.error === "string" ? data.error : "Generation failed");
   }
 
-  const data = await response.json();
   return data.questions;
 }
 
 function renumberQuestions(questions: Question[]): Question[] {
-  return questions.map((q, i) => ({
-    ...q,
-    id: `q${i + 1}`,
+  return questions.map((question, index) => ({
+    ...question,
+    id: `q${index + 1}`,
   }));
 }
 
 function similarity(a: string, b: string): number {
-  const na = normalizeText(a);
-  const nb = normalizeText(b);
-  const wordsA = new Set(na.split(" "));
-  const wordsB = new Set(nb.split(" "));
-  const intersection = [...wordsA].filter((w) => wordsB.has(w)).length;
+  const wordsA = new Set(normalizeText(a).split(" ").filter((word) => word.length > 2));
+  const wordsB = new Set(normalizeText(b).split(" ").filter((word) => word.length > 2));
+  const intersection = [...wordsA].filter((word) => wordsB.has(word)).length;
   const union = new Set([...wordsA, ...wordsB]).size;
   return union === 0 ? 0 : intersection / union;
 }
 
 function deduplicateQuestions(questions: Question[]): Question[] {
   const unique: Question[] = [];
-  for (const q of questions) {
-    const isDuplicate = unique.some((u) => similarity(u.question, q.question) > SIMILARITY_THRESHOLD);
-    if (!isDuplicate) unique.push(q);
+  for (const question of questions) {
+    const isDuplicate = unique.some((existing) => similarity(existing.question, question.question) > SIMILARITY_THRESHOLD);
+    if (!isDuplicate) unique.push(question);
   }
   return unique;
 }

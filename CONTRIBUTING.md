@@ -33,7 +33,7 @@ Here are the areas where contributions would have the most impact:
 - **File Format Parsers** -- Right now STARK handles PDFs. We need parsers for DOCX and PPTX so students can upload their lecture slides and notes directly.
 - **UI/UX Improvements** -- Better layouts, accessibility fixes, mobile responsiveness, dark mode polish -- anything that makes the app easier and more pleasant to use.
 - **Internationalization (i18n)** -- STARK should work for students everywhere. Help us add support for more languages.
-- **Documentation** -- Clearer docs, better examples, self-hosting guides, tutorials. If something confused you when getting started, it probably confuses others too.
+- **Documentation** -- Clearer docs, better examples, setup notes, tutorials. If something confused you when getting started, it probably confuses others too.
 
 ---
 
@@ -125,7 +125,7 @@ scripts/        — Python scripts for PDF processing
 docs/           — Documentation
 ```
 
-- **`src/lib/db.ts`** -- The Dexie.js database schema. All data is stored client-side in IndexedDB.
+- **`src/lib/db.ts`** -- The Dexie.js schema. PDFs and tests are stored in the browser.
 - **`src/lib/prompts.ts`** -- The prompts sent to the AI for generating test questions. This is where prompt engineering work happens.
 - **`src/lib/schemas.ts`** -- Zod schemas for validating AI responses and other data structures.
 - **`src/hooks/`** -- Custom hooks that provide data access patterns (`useProjects`, `usePDFs`, `useTests`, `useSettings`, `useStats`).
@@ -207,7 +207,7 @@ type: short description
 ```
 feat: add DOCX parser
 fix: correct score calculation
-docs: update self-hosting guide
+docs: update the setup guide
 refactor: simplify PDF pipeline
 style: fix inconsistent indentation in sidebar
 test: add unit tests for prompt builder

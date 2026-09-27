@@ -1,8 +1,8 @@
 "use client";
 
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, type TestRecord, type Question } from "@/lib/db";
-import { normalizeText } from "@/lib/utils";
+import { db, type TestRecord } from "@/lib/db";
+import { gradeTest } from "@/lib/grading";
 
 export function useTests(projectId?: string) {
   const tests = useLiveQuery(() => {
@@ -35,15 +35,7 @@ export function useTests(projectId?: string) {
     const test = await db.tests.get(testId);
     if (!test) return;
 
-    let totalCorrect = 0;
-    for (const q of test.questions) {
-      const userAnswer = test.answers[q.id];
-      if (isCorrect(q, userAnswer)) {
-        totalCorrect++;
-      }
-    }
-
-    const score = Math.round((totalCorrect / test.totalQuestions) * 100);
+    const { score, totalCorrect } = gradeTest(test.questions, test.answers);
 
     await db.tests.update(testId, {
       status: "completed",
@@ -67,9 +59,4 @@ export function useTests(projectId?: string) {
 export function useTest(id: string) {
   const test = useLiveQuery(() => db.tests.get(id), [id]);
   return test;
-}
-
-function isCorrect(question: Question, userAnswer: string | undefined): boolean {
-  if (!userAnswer) return false;
-  return normalizeText(userAnswer) === normalizeText(question.correctAnswer);
 }

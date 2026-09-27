@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-09-27
+
+### Changed
+
+- Questions are drawn from page windows across the PDF, not only the opening pages
+- Practice mode shows an explanation after each answer; exam mode still waits until submit
+- Finished attempts can be drilled using only missed questions
+- Short answers accept equivalent wording, including German spelling
+- PDF reading rejects files over 20 MB, cleans extracted text, and OCRs a capped set of sparse pages
+- Setup docs point at this repository and describe a local run
+
 ## [0.1.0] - 2026-02-13
 
 ### Added
@@ -16,6 +27,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Batch question generation with deduplication
 - Analytics dashboard with score trends and breakdowns
 - Multi-language support (English, German)
-- Offline-first architecture with IndexedDB storage
-- Self-hosting documentation and setup scripts
+- Browser storage for PDFs and tests, with no separate database
+- Setup documentation and setup scripts
 - Old exam upload for AI style matching

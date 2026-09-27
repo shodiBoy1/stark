@@ -4,7 +4,7 @@ Technical architecture document for STARK, an AI-powered exam preparation tool.
 
 ## Overview
 
-STARK is a self-hosted Next.js 16 application. All user data is stored client-side in IndexedDB (via Dexie.js). The server handles PDF processing (Python subprocess) and AI generation (OpenAI/Anthropic API calls). No user data is persisted on the server.
+STARK is a Next.js 16 app you run on your own machine. Fork it, add your own model API key, and generate practice exams from your lecture PDFs. PDFs and test attempts are kept in the browser with Dexie.js so there is no database to set up. Reading a PDF and generating questions sends that lecture text (and page images, when a page has little selectable text) to the model provider for the key you configured.
 
 ## Data Flow
 
@@ -16,48 +16,38 @@ User uploads PDF
        |
        v
 [Python subprocess: scripts/render_pages.py]
-  - Uses pypdfium2 to extract text + render pages to JPEG
+  - pypdfium2 extracts text from each page (up to 120)
+  - pages under 100 characters are rendered to JPEG, capped at 16
        |
        v
-[Check text quality: avg chars/page >= 100?]
-  - YES -> Use basic extracted text (fast path, sub-second)
-  - NO  -> Send page images to OpenAI Vision (gpt-4o-mini) for OCR
+[Sparse pages go to OpenAI vision OCR when OPENAI_API_KEY is set]
        |
        v
-[Return extracted text + page count to client]
+[Return per-page text, warnings, and page count]
        |
        v
-[Client stores PDF + text in IndexedDB via Dexie.js]
+[Browser saves the PDF and page text with Dexie]
 ```
 
 ## PDF Processing Pipeline
 
 1. User uploads PDF via browser.
 2. File sent to `/api/pdf/upload` API route.
-3. Saved to temp file, then Python subprocess (`scripts/render_pages.py`) runs:
-   - pypdfium2 extracts text per page.
-   - pypdfium2 renders each page to JPEG (base64).
-4. If avg chars/page >= 100, the PDF is text-heavy. Use extracted text directly.
-5. If avg chars/page < 100, the PDF is scanned or image-based. Send images to OpenAI Vision in batches of 3 pages.
-6. Vision OCR has retry logic with rate limit handling (reads `x-ratelimit-remaining-tokens` headers).
-7. Rescan endpoint (`/api/pdf/rescan`) always runs Vision OCR for full re-extraction.
+3. The PDF is written to a temporary file (random name, deleted after extraction). Python (`scripts/render_pages.py`) extracts text per page and renders only sparse pages.
+4. Pages with at least 100 characters of selectable text skip OCR.
+5. Up to 16 sparse pages are sent to OpenAI vision in small batches. A page keeps its extracted text if OCR returns nothing better.
+6. Vision OCR retries when the provider reports a rate limit.
+7. `/api/pdf/rescan` runs the same pipeline again. Uploads over 20 MB are rejected.
 
 ## Test Generation Pipeline
 
 1. User selects PDFs, difficulty, language, model, and question count.
-2. Client calls `generateInBatches()` which splits into batches of 22 questions.
-3. Each batch calls `/api/generate` API route.
-4. Server builds prompt with:
-   - Source text (up to 40K chars, split across sources).
-   - Difficulty instructions (Bloom's taxonomy levels).
-   - Language instructions.
-   - Exam context from old exams (if the project has old exams).
-   - Custom instructions (if provided).
-   - Previously generated questions (for deduplication).
-5. Sends to OpenAI (gpt-4o-mini) or Anthropic (claude-sonnet-4-5) based on user choice.
-6. Response parsed as JSON array, validated with Zod schema.
-7. Client deduplicates across batches using Jaccard word similarity (threshold: 0.7).
-8. Questions stored in IndexedDB with the test record.
+2. Client calls `generateInBatches()`, which asks for up to 12 questions at a time.
+3. Each batch calls `/api/generate`.
+4. The server builds a prompt from a page window for that batch (later batches cover later pages), plus difficulty, language, old-exam style notes, and questions already written.
+5. The chosen model returns JSON. Questions are repaired (choice labels, true/false wording) and checked with Zod. One retry runs if the payload cannot be used.
+6. The client drops near-duplicate questions (word overlap above 0.7) and stores the test in the browser.
+7. Practice mode shows the explanation after an answer. Exam simulation hides it until submit. A finished attempt can be drilled again using only the missed questions.
 
 ## IndexedDB Schema (Dexie v3)
 
@@ -140,7 +130,7 @@ Upload and extract PDF text. Accepts a PDF file, saves to temp, runs Python extr
 
 ### POST /api/pdf/rescan
 
-Re-extract PDF with full Vision OCR. Always sends page images to OpenAI Vision regardless of text quality, for cases where initial extraction was insufficient.
+Runs the same extraction pipeline again. Useful when the first pass missed text on sparse pages.
 
 ### POST /api/generate
 
@@ -192,7 +182,7 @@ scripts/
 
 ## Security Considerations
 
-- All user data remains in the browser (IndexedDB). Nothing is stored server-side.
-- API keys for OpenAI and Anthropic must be configured as environment variables on the server.
-- PDF files are written to temp storage during processing and are not retained after extraction completes.
-- The application is designed for self-hosting. There is no multi-tenant authentication layer.
+- Put API keys in `.env.local` on the machine that runs the app. Do not commit that file.
+- Lecture text and, for sparse pages, page images are sent to the model provider when you generate questions or run OCR.
+- The uploaded PDF is written to a temp file for extraction and deleted when that step finishes.
+- There is no login. Run it for yourself. Do not put it on a public URL with your API key, or other people can spend that key.

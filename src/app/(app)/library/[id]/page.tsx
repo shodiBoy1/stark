@@ -11,6 +11,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate, formatFileSize, truncate } from "@/lib/utils";
+import { requestPdfExtraction } from "@/lib/pdf-client";
 
 export default function PDFDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -23,16 +24,7 @@ export default function PDFDetailPage({ params }: { params: Promise<{ id: string
 
     setIsScanning(true);
     try {
-      const formData = new FormData();
-      formData.append("file", pdf.pdfBlob);
-
-      const res = await fetch("/api/pdf/rescan", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Rescan failed");
-      const data = await res.json();
+      const data = await requestPdfExtraction(pdf.pdfBlob, pdf.name, "/api/pdf/rescan");
 
       await updatePDF(pdf.id, {
         pageTexts: data.pageTexts,
@@ -41,9 +33,10 @@ export default function PDFDetailPage({ params }: { params: Promise<{ id: string
       });
 
       toast.success("Text extraction complete!");
+      for (const warning of data.warnings ?? []) toast.warning(warning);
     } catch (error) {
       console.error("Rescan failed:", error);
-      toast.error("Re-scan failed");
+      toast.error(error instanceof Error ? error.message : "Re-scan failed");
     } finally {
       setIsScanning(false);
     }

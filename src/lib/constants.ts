@@ -29,15 +29,18 @@ export const EXAM_FORMATS = [
 ] as const;
 
 export const TEST_MODES = [
-  { value: "practice", label: "Practice", description: "Elapsed timer, no auto-submit" },
-  { value: "exam_simulation", label: "Exam Simulation", description: "Countdown timer, auto-submit when time runs out" },
+  { value: "practice", label: "Practice", description: "Explanation after each answer" },
+  { value: "exam_simulation", label: "Exam Simulation", description: "Timed. Explanations stay hidden until you submit" },
 ] as const;
 
-export const QUESTIONS_PER_BATCH = 22;
-export const MAX_QUESTIONS = 80;
+export const QUESTIONS_PER_BATCH = 12;
+export const MAX_QUESTIONS = 60;
+export const MAX_PDF_BYTES = 20 * 1024 * 1024;
+export const MAX_PDF_PAGES = 120;
+export const MAX_OCR_PAGES = 16;
 
 // Text budgets for prompt building
-export const TEXT_BUDGET = 40_000;
+export const TEXT_BUDGET = 28_000;
 export const EXAM_CONTEXT_BUDGET = 8_000;
 export const INSTRUCTIONS_BUDGET = 4_000;
 export const OLD_EXAM_TEXT_BUDGET = 10_000;

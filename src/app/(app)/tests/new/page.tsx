@@ -16,6 +16,7 @@ import { useTests } from "@/hooks/useTests";
 import { useProjects } from "@/hooks/useProjects";
 import { DEFAULT_SETTINGS, LANGUAGES, DIFFICULTIES, MODELS, TEST_MODES, EXAM_FORMATS, MAX_QUESTIONS, QUESTIONS_PER_BATCH } from "@/lib/constants";
 import { generateInBatches } from "@/lib/generate";
+import { pagesForGeneration } from "@/lib/source-text";
 import type { PDFRecord, TestRecord } from "@/lib/db";
 
 function NewTestContent() {
@@ -58,7 +59,7 @@ function NewTestContent() {
         (p) => p.projectId === selectedProject.id && p.pdfType === "lecture"
       );
       setSelectedPdfIds(projectLecturePDFs.map((p) => p.id));
-      setQuestionsCount(selectedProject.examQuestionCount);
+      setQuestionsCount(Math.min(MAX_QUESTIONS, Math.max(5, selectedProject.examQuestionCount || 10)));
       if (selectedProject.examFormat) setExamFormat(selectedProject.examFormat);
       if (selectedProject.examTimeMinutes > 0) {
         setTestMode("exam_simulation");
@@ -90,8 +91,8 @@ function NewTestContent() {
     setBatchProgress({ completed: 0, total: Math.ceil(questionsCount / QUESTIONS_PER_BATCH) });
 
     try {
-      const texts = selectedPDFObjects.map((p) => p.extractedText);
-      const pdfName = selectedPDFObjects.map((p) => p.name.replace(".pdf", "")).join(", ");
+      const sources = selectedPDFObjects.map((pdf) => pagesForGeneration(pdf));
+      const pdfName = sources.map((source) => source.name).join(", ");
 
       // Build exam context from project
       let examContext: string | undefined;
@@ -110,12 +111,11 @@ function NewTestContent() {
       }
 
       const questions = await generateInBatches({
-        texts,
+        sources,
         difficulty,
         language,
         model,
-        questionsCount,
-        pdfName,
+        questionsCount: Math.min(MAX_QUESTIONS, Math.max(5, questionsCount)),
         examFormat,
         examContext,
         instructions: customInstructions.trim() || undefined,

@@ -26,6 +26,7 @@ import { usePDFs } from "@/hooks/usePDFs";
 import { useProjectTests } from "@/hooks/useProjects";
 import { generateThumbnail } from "@/lib/utils";
 import { OLD_EXAM_TEXT_BUDGET } from "@/lib/constants";
+import { requestPdfExtraction } from "@/lib/pdf-client";
 import type { PDFRecord } from "@/lib/db";
 
 type Tab = "materials" | "tests";
@@ -90,19 +91,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     }
     setIsRescanning(pdf.id);
     try {
-      const formData = new FormData();
-      formData.append("file", pdf.pdfBlob);
-      const res = await fetch("/api/pdf/rescan", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Rescan failed");
-      const data = await res.json();
+      const data = await requestPdfExtraction(pdf.pdfBlob, pdf.name, "/api/pdf/rescan");
       await updatePDF(pdf.id, {
         pageTexts: data.pageTexts,
         extractedText: data.text,
         pageCount: data.pageCount,
       });
       toast.success(`"${pdf.name}" re-scanned successfully`);
-    } catch {
-      toast.error(`Failed to re-scan "${pdf.name}"`);
+      for (const warning of data.warnings ?? []) toast.warning(warning);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : `Failed to re-scan "${pdf.name}"`);
     } finally {
       setIsRescanning(null);
     }
@@ -116,16 +114,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     for (const pdf of pdfsToScan) {
       if (!pdf.pdfBlob) continue;
       try {
-        const formData = new FormData();
-        formData.append("file", pdf.pdfBlob);
-        const res = await fetch("/api/pdf/rescan", { method: "POST", body: formData });
-        if (!res.ok) throw new Error("Rescan failed");
-        const data = await res.json();
+        const data = await requestPdfExtraction(pdf.pdfBlob, pdf.name, "/api/pdf/rescan");
         await updatePDF(pdf.id, {
           pageTexts: data.pageTexts,
           extractedText: data.text,
           pageCount: data.pageCount,
         });
+        for (const warning of data.warnings ?? []) toast.warning(warning);
         success++;
       } catch {
         console.warn(`Rescan failed for ${pdf.name}`);
@@ -157,16 +152,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         setUploadProgress({ current: i + 1, total: pdfFiles.length });
         try {
           setUploadPhase("Processing...");
-          const formData = new FormData();
-          formData.append("file", file);
-
-          const response = await fetch("/api/pdf/upload", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!response.ok) throw new Error("Failed to process PDF");
-          const data = await response.json();
+          const data = await requestPdfExtraction(file, file.name, "/api/pdf/upload");
+          for (const warning of data.warnings ?? []) toast.warning(warning);
 
           const thumbnailDataUrl = generateThumbnail(file.name);
 
@@ -196,8 +183,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           }
 
           successCount++;
-        } catch {
-          toast.error(`Failed to process "${file.name}"`);
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : `Failed to process "${file.name}"`);
         }
       }
 

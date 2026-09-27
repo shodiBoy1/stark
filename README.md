@@ -2,7 +2,7 @@
 
 **Upload your lectures. Generate practice exams. Ace your finals.**
 
-A self-hosted, AI-powered exam preparation tool. Upload your lecture PDFs, and STARK generates realistic practice exams using OpenAI or Anthropic.
+An open-source exam practice app. Fork it, run it on your machine, and generate practice questions from your own lecture PDFs. You bring an API key from a model provider. There is nothing to buy from this project.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org)
@@ -14,17 +14,18 @@ https://github.com/user-attachments/assets/32b7e525-51e3-4b25-bf97-f24602a3a489
 
 ## Features
 
-- **AI-generated practice tests** — multiple choice, true/false, short answer, and fill-in-the-blank
-- **Dual AI provider** — choose between OpenAI and Anthropic
-- **Smart PDF pipeline** — pypdfium2 for fast text extraction, with OpenAI Vision OCR fallback for scanned documents
-- **Upload lecture PDFs and old exams** — STARK matches the style of your professor's real exams
-- **Project-based organization** — group materials by course with exam context for better generation
-- **Batch generation with deduplication** — generate up to 80 questions without repeats
-- **Practice mode and Exam simulation** — timed exam mode with countdown, or untimed practice
-- **Performance analytics** — track your scores over time with visual breakdowns
-- **Bloom's taxonomy difficulty levels** — Easy, Medium, and Hard question tiers
-- **Multi-language support** — English and German
-- **Custom instructions** — fine-tune how the AI generates your questions
+- **Practice tests from your PDFs** — multiple choice, true/false, short answer, and fill-in-the-blank
+- **Coverage across the lecture** — later batches use later pages, not only the opening section
+- **Two model providers** — OpenAI, or Anthropic if you add that key
+- **PDF reading** — pypdfium2 for selectable text, OpenAI vision for pages with little text
+- **Old exams as style context** — upload a past paper so new questions follow that format
+- **Practice and exam simulation** — practice shows the explanation after each answer; exam mode hides it until you submit
+- **Missed-question drill** — retry only the questions you got wrong
+- **Short answers** — equivalent wording can count, not only a character-for-character match
+- **Score history** — track attempts over time
+- **Difficulty levels** — Easy, Medium, and Hard, aligned with Bloom's taxonomy
+- **English and German** questions
+- **Optional instructions** — ask for a format or a topic split inside the exam rules
 
 ## Quick Start
 
@@ -39,7 +40,7 @@ https://github.com/user-attachments/assets/32b7e525-51e3-4b25-bf97-f24602a3a489
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/usestark/stark.git
+git clone https://github.com/shodiBoy1/stark.git
 cd stark
 ```
 
@@ -81,9 +82,9 @@ pnpm dev
 | Framework | Next.js 16 (App Router), React 19 |
 | Language | TypeScript |
 | Styling | Tailwind CSS 4 |
-| Local Storage | Dexie.js (IndexedDB) |
-| PDF Extraction | pypdfium2 (fast), OpenAI Vision gpt-4o-mini (OCR fallback) |
-| AI Generation | OpenAI GPT-4o Mini, Anthropic Claude Sonnet |
+| Browser storage | Dexie.js |
+| PDF extraction | pypdfium2, OpenAI vision for sparse pages |
+| Question generation | OpenAI GPT-4o Mini, or Anthropic Claude Sonnet |
 | Charts | Recharts |
 | Validation | Zod |
 
@@ -91,13 +92,13 @@ pnpm dev
 
 | Variable | Required | Description |
 |---|---|---|
-| `OPENAI_API_KEY` | Yes | Powers test generation (GPT-4o Mini) and Vision OCR for scanned PDFs |
-| `ANTHROPIC_API_KEY` | No | Enables Claude Sonnet as an alternative AI model for generation |
+| `OPENAI_API_KEY` | Yes | Your key. Used for question generation and for reading sparse PDF pages |
+| `ANTHROPIC_API_KEY` | No | Your key. Enables Claude Sonnet as a second model |
 | `STARK_VENV_PATH` | No | Custom path to the Python virtual environment (default: `~/.stark-venv`) |
 
-## Self-Hosting
+## Run it yourself
 
-STARK is designed to be self-hosted. For detailed deployment instructions, including Docker setup and reverse proxy configuration, see [docs/SELF-HOST.md](docs/SELF-HOST.md).
+Clone the repo and follow [docs/SELF-HOST.md](docs/SELF-HOST.md). The app is meant to run on your computer for your own courses. Question generation sends the lecture text to the provider for the API key in `.env.local`.
 
 ## Contributing
 

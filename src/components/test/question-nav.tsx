@@ -8,29 +8,34 @@ interface QuestionNavProps {
   questions: Question[];
   answers: Record<string, string>;
   currentIndex: number;
+  flagged?: string[];
   onNavigate: (index: number) => void;
 }
 
-export function QuestionNav({ questions, answers, currentIndex, onNavigate }: QuestionNavProps) {
+export function QuestionNav({ questions, answers, currentIndex, flagged = [], onNavigate }: QuestionNavProps) {
+  const flaggedSet = new Set(flagged);
+
   return (
     <GlassCard className="p-4">
       <h3 className="text-xs font-medium text-muted mb-3 uppercase tracking-wider">Questions</h3>
       <div className="grid grid-cols-5 gap-2">
         {questions.map((q, i) => {
-          const isAnswered = !!answers[q.id];
+          const isAnswered = !!answers[q.id]?.trim();
           const isCurrent = i === currentIndex;
+          const isFlagged = flaggedSet.has(q.id);
 
           return (
             <button
               key={q.id}
               onClick={() => onNavigate(i)}
               className={cn(
-                "w-full aspect-square rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer",
+                "relative w-full aspect-square rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer",
                 isCurrent
                   ? "bg-accent text-white"
                   : isAnswered
                     ? "bg-accent-soft/20 text-accent-soft"
-                    : "bg-black/5 text-muted hover:bg-black/10"
+                    : "bg-black/5 text-muted hover:bg-black/10",
+                isFlagged && !isCurrent && "ring-2 ring-warning/70"
               )}
             >
               {i + 1}
@@ -38,6 +43,7 @@ export function QuestionNav({ questions, answers, currentIndex, onNavigate }: Qu
           );
         })}
       </div>
+      <p className="text-[11px] text-muted mt-3">Flagged questions have a ring. Jump back to them before you submit.</p>
     </GlassCard>
   );
 }
